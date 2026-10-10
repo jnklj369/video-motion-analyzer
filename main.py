@@ -72,7 +72,8 @@ if __name__ == "__main__":
         result = analyze(s, e)
         print("\n" + "="*20 + " 像素级拆解报告 " + "="*20)
         print(result)
-        with open("report.md", "w", encoding="utf-8") as f:
+        # 导出为记事本 TXT 格式
+        with open("report.txt", "w", encoding="utf-8") as f:
             f.write(result)
     else:
         print("未检测到 test.mp4 文件，请上传视频后重新运行。")
