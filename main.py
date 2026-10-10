@@ -34,10 +34,22 @@ def analyze(s_path, e_path):
     b64_end = to_base64(e_path)
     
     prompt = """
-    对比这两张连续画面的起始帧与结束帧，详细拆解其运镜与视觉动态：
-    1. 【运镜轨迹】：说明镜头移动方向（推/拉/摇/移/俯仰/环绕等）
-    2. 【主体动态】：主体核心动作或状态变化
-    3. 【AI复原提示词】：给出适用于可灵/Runway/即梦的中英文 Prompt
+    对比起始帧与结束帧，进行像素级微观拆解并提供复原Prompt：
+
+    ### 1. 人物主体
+    - 五官神态：脸型、眼神焦点、微表情与唇形。
+    - 头发动作：发色、发丝流向与飘动弧度。
+    - 手部体态：手指关节形态、微动作及骨架重心。
+    - 服饰鞋饰：服装版型、面料纹理、褶皱、鞋履与配饰。
+
+    ### 2. 微观与环境
+    - 地面细节：地表材质、微小物体（碎屑/爬虫/水渍）与倒影。
+    - 空气光影：光照方向、冷暖色温与漂浮尘埃。
+    - 空间运镜：机位角度、景深与相机推拉摇移矢量。
+
+    ### 3. 复原提示词
+    - 【生图Prompt】：包含所有五官、服饰、环境特征的中英关键词。
+    - 【生视频Prompt】：包含动态过渡、微运动与运镜轨迹的中英文指令。
     """
     
     res = client.chat.completions.create(
@@ -49,7 +61,8 @@ def analyze(s_path, e_path):
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_start}"}},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_end}"}}
             ]
-        }]
+        }],
+        temperature=0.1
     )
     return res.choices[0].message.content
 
@@ -57,9 +70,8 @@ if __name__ == "__main__":
     if os.path.exists("test.mp4"):
         s, e = extract_frames("test.mp4")
         result = analyze(s, e)
-        print("\n" + "="*20 + " 运镜拆解报告 " + "="*20)
+        print("\n" + "="*20 + " 像素级拆解报告 " + "="*20)
         print(result)
-        # 将分析结果保存为 Markdown 文件
         with open("report.md", "w", encoding="utf-8") as f:
             f.write(result)
     else:
