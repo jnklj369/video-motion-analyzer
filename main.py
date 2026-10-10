@@ -76,7 +76,10 @@ def classify(m, w, h, dt):
     rot = abs(m["rot"]) / dt
     mag = math.hypot(ndx, ndy)
     tags = []
-    if rot > 1.0:
+    # 内点率过低:主体运动掩盖了镜头运动,硬猜方向只会错,直接报不可靠
+    if m["inlier_ratio"] < 0.35:
+        return "主体运动主导,镜头运动不可靠"
+    if rot > 3.0:
         tags.append("旋转镜头roll")
     if ds > 0.008:
         tags.append("推镜push-in")
@@ -90,8 +93,6 @@ def classify(m, w, h, dt):
         tags.append("快速" if mag > 0.06 else ("中速" if mag > 0.02 else "慢速"))
     if not tags:
         tags.append("固定机位static")
-    if m["inlier_ratio"] < 0.4:
-        tags.append("⚠画面主体运动干扰较大,仅供参考")
     return " + ".join(tags)
 
 
@@ -120,8 +121,15 @@ def b64(img):
 
 
 def llm_report(keyframes, timeline):
+    clean = [(s, e, kw) for s, e, kw in timeline if "不可靠" not in kw]
+    if not clean:
+        clean_note = "注:本视频以主体运动为主,未检测到明确镜头运动,请按固定机位处理。"
+    else:
+        clean_note = ""
     motion_text = "\n".join(
-        " - %.1fs -> %.1fs: %s" % (s, e, kw) for s, e, kw in timeline)
+        " - %.1fs -> %.1fs: %s" % (s, e, kw) for s, e, kw in clean)
+    if clean_note:
+        motion_text += "\n" + clean_note
     prompt = (
         "你是视频分镜师。下方【运镜时间线】是光流算法逐段实测的"
         "真实镜头运动数据,请严格采用,不要自己编造运镜。\n\n"
