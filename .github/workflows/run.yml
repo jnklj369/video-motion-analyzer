@@ -33,5 +33,4 @@ jobs:
           name: 分析报告与关键帧
           path: |
             report.txt
-            start.jpg
-            end.jpg
+            kf_*.jpg
